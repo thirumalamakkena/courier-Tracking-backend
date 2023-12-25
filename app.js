@@ -1,7 +1,10 @@
 const express = require("express");
 
+
 const app = express();
 app.use(express.json());
+
+
 
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -13,9 +16,11 @@ const cors = require("cors");
 app.use(cors());
 
 const path = require("path");
+const { serialize } = require("v8");
 const dbPath = path.join(__dirname, "courier_tracking.db");
 
 let db = null;
+const port = process.env.PORT || 4000;
 
 const initializeDBAndServer = async () => {
   try {
@@ -23,9 +28,7 @@ const initializeDBAndServer = async () => {
       filename: dbPath,
       driver: sqlite3.Database,
     });
-    app.listen(4000, async () => {
-      console.log("Server is running at http:/localhost:4000/");
-    });
+      app.listen(port, async () => {console.log("server is running on port 4000")});
   } catch (e) {
     console.log(e.message);
   }
@@ -136,9 +139,9 @@ app.post("/addPackage", async (request, response) => {
 });
 
 app.post("/updatePackage", async (request, response) => {
-  const { trackingId, status, location, courierId } = request.body;
+    const { trackingId, status, location, courierId } = request.body;
 
-  const updateCourierQuery = `
+    const updateCourierQuery = `
     INSERT INTO tracking_history 
     VALUES
     (
@@ -149,9 +152,9 @@ app.post("/updatePackage", async (request, response) => {
         '${courierId}'
     );
   `;
-  const createCourier = await db.run(updateCourierQuery);
-  console.log(createCourier);
-  response.send("history Successfully Added");
+    const createCourier = await db.run(updateCourierQuery);
+    console.log(createCourier);
+    response.send("history Successfully Added");
 });
 
 app.get("/get", async (request, response) => {
@@ -164,3 +167,4 @@ app.get("/get", async (request, response) => {
   const obj = await db.all(query);
   response.send(obj);
 });
+
