@@ -1,37 +1,63 @@
+
+
 POST http://localhost:4000/login/
 Content-Type: application/json
 
+
 {
-    "username": "thirumala",
+    "username": "admin",
     "password": "abc123"
 }
 
 ###
 
 
-POST http://localhost:3000/addPackage/
+POST http://localhost:4000/addCourier/
 Content-Type: application/json
 
+
 {
-    "courierId": 61504,
-    "courierName": "Delivery",
-    "fromAddress": "Vijayawada",
-    "toAddress":"Badrachalam"
+    "courierId": 61502,
+    "courierName": "T-shirt",
+    "fromAddress": "Eluru",
+    "toAddress":"Badrachalam",
+    "isDelivered": false
 }
 
 ###
 
 
-POST http://localhost:3000/updatePackage/
+POST http://localhost:4000/addShipment/
 Content-Type: application/json
 
 {
-    "courierId": 61504,
-    "trackingId": 1,
-    "location": "Guntur",
-    "status":"arrived"
+    "courierID": 61503,
+    "shipmentID": 25694,
+    "location": "Vijayawada",
+    "status":"dispatched"
 }
 
 ###
 
-GET http://localhost:4000/get
+GET http://localhost:4000/getTrackingData/76084
+
+
+###
+GET http://localhost:4000/getCourier/61504
+
+
+###
+DELETE http://localhost:4000/deleteShipment/
+
+
+###
+
+PUT http://localhost:4000/updateShipment/
+Content-Type: application/json
+
+{
+    "courierId": 61504,
+    "shipmentID": 4,
+    "location": "Hyderabad",
+    "status":"delivered"
+}

@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "engines":{ "node": "14.x" },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node app.js",
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "",
@@ -23,9 +24,6 @@
     "nock": "^13.4.0",
     "serverless-http": "^3.2.0",
     "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.6"
-  },
-  "engines": {
-    "node": "21.4.0"
+    "sqlite3": "^5.1.7"
   }
 }

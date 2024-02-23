@@ -1,10 +1,8 @@
 const express = require("express");
-
+const { format } = require("date-fns");
 
 const app = express();
 app.use(express.json());
-
-
 
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -16,7 +14,8 @@ const cors = require("cors");
 app.use(cors());
 
 const path = require("path");
-const { serialize } = require("v8");
+const { el } = require("date-fns/locale");
+
 const dbPath = path.join(__dirname, "courier_tracking.db");
 
 let db = null;
@@ -28,7 +27,9 @@ const initializeDBAndServer = async () => {
       filename: dbPath,
       driver: sqlite3.Database,
     });
-      app.listen(port, async () => {console.log("server is running on port 4000")});
+    app.listen(port, async () => {
+      console.log("server is running on port 4000");
+    });
   } catch (e) {
     console.log(e.message);
   }
@@ -73,7 +74,7 @@ app.post("/login/", async (request, response) => {
 
   if (dbUser === undefined) {
     response.status(400);
-    response.send("Invalid user");
+    response.send({ errorMsg: "Username or password is invalid" });
   } else {
     const isPasswordMatched = await bcrypt.compare(
       password,
@@ -85,7 +86,7 @@ app.post("/login/", async (request, response) => {
       response.send({ jwtToken });
     } else {
       response.status(400);
-      response.send("Invalid password");
+      response.send({ errorMsg: "username and password didn't match" });
     }
   }
 });
@@ -111,7 +112,7 @@ const authenticateToken = (request, response, next) => {
   }
 };
 
-app.post("/addPackage", async (request, response) => {
+app.post("/addCourier", async (request, response) => {
   const date = format(new Date(), "MM/dd/yyyy");
   const {
     courierId,
@@ -133,38 +134,98 @@ app.post("/addPackage", async (request, response) => {
         '${isDelivered}'
     );
   `;
-  const createCourier = await db.run(updateCourierQuery);
-  console.log(createCourier);
-  response.send("Courier Successfully Added");
+
+  await db.run(updateCourierQuery);
+  response.send({ message: "Courier Successfully Added" });
 });
 
-app.post("/updatePackage", async (request, response) => {
-    const { trackingId, status, location, courierId } = request.body;
-
-    const updateCourierQuery = `
+app.post("/addShipment", async (request, response) => {
+  const { shipmentID, status, location, courierID } = request.body;
+  const updateCourierQuery = `
     INSERT INTO tracking_history 
     VALUES
     (
-        ${trackingId},
+        ${shipmentID},
         '${status}',
         '${location}',
          CURRENT_TIMESTAMP,
-        '${courierId}'
+        '${courierID}'
     );
   `;
-    const createCourier = await db.run(updateCourierQuery);
-    console.log(createCourier);
-    response.send("history Successfully Added");
+  const createCourier = await db.run(updateCourierQuery);
+  response.send({ message: "Shipment Added Successfully" });
 });
 
-app.get("/get", async (request, response) => {
+app.put("/updateShipment", async (request, response) => {
+  const { status, location, shipmentID } = request.body;
+  const updateCourierQuery = `
+    UPDATE tracking_history
+    SET 
+    status = '${status}',
+    location = '${location}'
+    WHERE
+    tracking_id = ${shipmentID};
+  `;
+  await db.run(updateCourierQuery);
+  response.send({ message: "Shipment Updated Successfully" });
+});
+
+app.delete("/deleteShipment/:shipmentID", async (request, response) => {
+  const { shipmentID } = request.params;
+  const deleteCourierQuery = `
+    DELETE FROM tracking_history
+    WHERE
+    tracking_id = ${shipmentID};
+  `;
+  const deleteCourier = await db.run(deleteCourierQuery);
+  response.send({ message: "Shipment Deleted Successfully" });
+});
+
+const formatData = (data) => {
+  return {
+    shipmentID: data.tracking_id,
+    status: data.status,
+    location: data.location,
+    courierId: data.courier_id,
+    timestamp: data.timestamp,
+  };
+};
+
+app.get("/getTrackingData/:courierID", async (request, response) => {
+  const { courierID } = request.params;
+  const query = `
+    SELECT 
+        *
+    FROM 
+       tracking_history
+    WHERE 
+        courier_id = ${courierID}
+       `;
+  const trackingData = await db.all(query);
+  if (trackingData.length === 0) {
+    response.status(400);
+    response.send([]);
+  } else {
+    response.send(trackingData.map((data) => formatData(data)));
+  }
+});
+
+app.get("/getCourier/:courierID", async (request, response) => {
+  const { courierID } = request.params;
   const query = `
    SELECT 
         *
     FROM 
-       users;
-   `;
-  const obj = await db.all(query);
-  response.send(obj);
+       couriers
+    WHERE 
+        courier_id = ${courierID};
+       `;
+  const obj = await db.get(query);
+  if (obj === undefined) {
+    response.status(400);
+    response.send({});
+  }
+  else {
+    response.send(obj);
+  }
 });
-
