@@ -1,7 +1,10 @@
 const express = require("express");
 const { format } = require("date-fns");
+const serverless = require("serverless-http");
 
 const app = express();
+const router = express.Router();
+
 app.use(express.json());
 
 const bcrypt = require("bcrypt");
@@ -14,12 +17,12 @@ const cors = require("cors");
 app.use(cors());
 
 const path = require("path");
-const { el } = require("date-fns/locale");
+
 
 const dbPath = path.join(__dirname, "courier_tracking.db");
 
 let db = null;
-const port = process.env.PORT || 4000;
+// const port = process.env.PORT || 4000;
 
 const initializeDBAndServer = async () => {
   try {
@@ -27,9 +30,10 @@ const initializeDBAndServer = async () => {
       filename: dbPath,
       driver: sqlite3.Database,
     });
-    app.listen(port, async () => {
+    /* app.listen(port, async () => {
       console.log("server is running on port 4000");
-    });
+    }); 
+    */
   } catch (e) {
     console.log(e.message);
   }
@@ -37,7 +41,7 @@ const initializeDBAndServer = async () => {
 
 initializeDBAndServer();
 
-app.post("/users/", async (request, response) => {
+router.post("/users/", async (request, response) => {
   const { username, name, password, gender, location } = request.body;
   const hashedPassword = await bcrypt.hash(request.body.password, 10);
   const selectUserQuery = `SELECT * FROM user WHERE username = '${username}'`;
@@ -65,7 +69,7 @@ app.post("/users/", async (request, response) => {
 
 //Login API
 
-app.post("/login/", async (request, response) => {
+router.post("/login/", async (request, response) => {
   const { username, password } = request.body;
   const selectUserQuery = `
         SELECT * FROM users WHERE username = '${username}';
@@ -112,7 +116,7 @@ const authenticateToken = (request, response, next) => {
   }
 };
 
-app.post("/addCourier", async (request, response) => {
+router.post("/addCourier", async (request, response) => {
   const date = format(new Date(), "MM/dd/yyyy");
   const {
     courierId,
@@ -139,7 +143,7 @@ app.post("/addCourier", async (request, response) => {
   response.send({ message: "Courier Successfully Added" });
 });
 
-app.post("/addShipment", async (request, response) => {
+router.post("/addShipment", async (request, response) => {
   const { shipmentID, status, location, courierID } = request.body;
   const updateCourierQuery = `
     INSERT INTO tracking_history 
@@ -156,7 +160,7 @@ app.post("/addShipment", async (request, response) => {
   response.send({ message: "Shipment Added Successfully" });
 });
 
-app.put("/updateShipment", async (request, response) => {
+router.put("/updateShipment", async (request, response) => {
   const { status, location, shipmentID } = request.body;
   const updateCourierQuery = `
     UPDATE tracking_history
@@ -170,7 +174,7 @@ app.put("/updateShipment", async (request, response) => {
   response.send({ message: "Shipment Updated Successfully" });
 });
 
-app.delete("/deleteShipment/:shipmentID", async (request, response) => {
+router.delete("/deleteShipment/:shipmentID", async (request, response) => {
   const { shipmentID } = request.params;
   const deleteCourierQuery = `
     DELETE FROM tracking_history
@@ -191,7 +195,7 @@ const formatData = (data) => {
   };
 };
 
-app.get("/getTrackingData/:courierID", async (request, response) => {
+router.get("/getTrackingData/:courierID", async (request, response) => {
   const { courierID } = request.params;
   const query = `
     SELECT 
@@ -210,7 +214,7 @@ app.get("/getTrackingData/:courierID", async (request, response) => {
   }
 });
 
-app.get("/getCourier/:courierID", async (request, response) => {
+router.get("/getCourier/:courierID", async (request, response) => {
   const { courierID } = request.params;
   const query = `
    SELECT 
@@ -229,3 +233,8 @@ app.get("/getCourier/:courierID", async (request, response) => {
     response.send(obj);
   }
 });
+
+app.use("/.netlify/functions/index", router);
+
+module.exports.handler = serverless(app);
+
