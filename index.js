@@ -39,6 +39,10 @@ const initializeDBAndServer = async () => {
   }
 };
 
+router.get("/", (request, response) => {
+  response.send("Courier Tracking......");  
+}); 
+
 initializeDBAndServer();
 
 router.post("/users/", async (request, response) => {
