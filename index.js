@@ -3,7 +3,7 @@ const { format } = require("date-fns");
 const serverless = require("serverless-http");
 
 const app = express();
-const router = express.Router();
+
 
 app.use(express.json());
 
@@ -12,9 +12,7 @@ const jwt = require("jsonwebtoken");
 
 const { open } = require("sqlite");
 const sqlite3 = require("sqlite3");
-const cors = require("cors");
 
-app.use(cors());
 
 const path = require("path");
 
@@ -22,7 +20,7 @@ const path = require("path");
 const dbPath = path.join(__dirname, "courier_tracking.db");
 
 let db = null;
-// const port = process.env.PORT || 4000;
+const port = process.env.PORT || 4000;
 
 const initializeDBAndServer = async () => {
   try {
@@ -30,22 +28,22 @@ const initializeDBAndServer = async () => {
       filename: dbPath,
       driver: sqlite3.Database,
     });
-    /* app.listen(port, async () => {
+   app.listen(port, async () => {
       console.log("server is running on port 4000");
     }); 
-    */
+    
   } catch (e) {
     console.log(e.message);
   }
 };
 
-router.get("/", (request, response) => {
+app.get("/", (request, response) => {
   response.send("Courier Tracking......");  
 }); 
 
 initializeDBAndServer();
 
-router.post("/users/", async (request, response) => {
+app.post("/users/", async (request, response) => {
   const { username, name, password, gender, location } = request.body;
   const hashedPassword = await bcrypt.hash(request.body.password, 10);
   const selectUserQuery = `SELECT * FROM user WHERE username = '${username}'`;
@@ -73,7 +71,7 @@ router.post("/users/", async (request, response) => {
 
 //Login API
 
-router.post("/login/", async (request, response) => {
+app.post("/login/", async (request, response) => {
   const { username, password } = request.body;
   const selectUserQuery = `
         SELECT * FROM users WHERE username = '${username}';
@@ -120,7 +118,7 @@ const authenticateToken = (request, response, next) => {
   }
 };
 
-router.post("/addCourier", async (request, response) => {
+app.post("/addCourier", async (request, response) => {
   const date = format(new Date(), "MM/dd/yyyy");
   const {
     courierId,
@@ -147,7 +145,7 @@ router.post("/addCourier", async (request, response) => {
   response.send({ message: "Courier Successfully Added" });
 });
 
-router.post("/addShipment", async (request, response) => {
+app.post("/addShipment", async (request, response) => {
   const { shipmentID, status, location, courierID } = request.body;
   const updateCourierQuery = `
     INSERT INTO tracking_history 
@@ -164,7 +162,7 @@ router.post("/addShipment", async (request, response) => {
   response.send({ message: "Shipment Added Successfully" });
 });
 
-router.put("/updateShipment", async (request, response) => {
+app.put("/updateShipment", async (request, response) => {
   const { status, location, shipmentID } = request.body;
   const updateCourierQuery = `
     UPDATE tracking_history
@@ -178,7 +176,7 @@ router.put("/updateShipment", async (request, response) => {
   response.send({ message: "Shipment Updated Successfully" });
 });
 
-router.delete("/deleteShipment/:shipmentID", async (request, response) => {
+app.delete("/deleteShipment/:shipmentID", async (request, response) => {
   const { shipmentID } = request.params;
   const deleteCourierQuery = `
     DELETE FROM tracking_history
@@ -199,7 +197,7 @@ const formatData = (data) => {
   };
 };
 
-router.get("/getTrackingData/:courierID", async (request, response) => {
+app.get("/getTrackingData/:courierID", async (request, response) => {
   const { courierID } = request.params;
   const query = `
     SELECT 
@@ -218,7 +216,7 @@ router.get("/getTrackingData/:courierID", async (request, response) => {
   }
 });
 
-router.get("/getCourier/:courierID", async (request, response) => {
+app.get("/getCourier/:courierID", async (request, response) => {
   const { courierID } = request.params;
   const query = `
    SELECT 
@@ -238,7 +236,5 @@ router.get("/getCourier/:courierID", async (request, response) => {
   }
 });
 
-app.use("/.netlify/functions/index", router);
 
-module.exports.handler = serverless(app);
 
